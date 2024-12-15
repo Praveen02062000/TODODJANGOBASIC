@@ -1,0 +1,4 @@
+create app = 'django-admin startapp todoapi'
+
+
+rest_frameframe = 'https://www.django-rest-framework.org/#installation

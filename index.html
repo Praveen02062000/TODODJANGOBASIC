@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <script src="https://code.jquery.com/jquery-3.7.1.js"
+        integrity="sha256-eKhayi8LEQwp4NKxN+CfCh+3qOVUtJn3QNZ0TciWLP4=" crossorigin="anonymous"></script>
+
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet"
+        integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js"
+        integrity="sha384-MrcW6ZMFYlzcLA8Nl+NtUVF0sA7MsXsP1UyJoMp4YLEuNSfAP+JcXn/tWtIaxVXM"
+        crossorigin="anonymous"></script>
+
+    <link rel="stylesheet"
+        href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
+</head>
+
+<body>
+    <style>
+        .main-head {
+            text-align: center;
+        }
+
+        .main-con {
+            margin: 1rem auto;
+        }
+
+        .main-input {
+            display: flex;
+            flex-direction: column;
+            margin-top: 2rem;
+        }
+
+        .main-input label {
+            font-size: 13px;
+        }
+
+        .data-view {
+            margin-top: 2rem;
+        }
+
+        .item-con {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .action-con span {
+            margin-right: 20px;
+        }
+
+        .empty-img {
+            display: flex;
+            align-items: center;
+            flex-direction: column;
+            text-align: center;
+            color: gray;
+        }
+
+        .empty-img img {
+            width: 150px;
+        }
+    </style>
+
+    <div class="container main-con">
+        <div class="main-head">
+            <h4>Todo</h4>
+            <h6>DJANGO PROJECT CRUD</h6>
+        </div>
+
+        <div class="main-input">
+            <div class="form-floating mb-3">
+                <input type="text" class="form-control value-input" id="floatingInput" placeholder="name@example.com">
+                <label for="floatingInput">Enter the task</label>
+            </div>
+            <button id="add-task" class="btn btn-primary">Add Task</button>
+        </div>
+        <div class="container data-view">
+
+        </div>
+        <div class="empty-img container">
+            <img src="./assets/empty.png" />
+            <h6>Task Empty</h6>
+        </div>
+    </div>
+
+    <script>
+
+        const img = $('.empty-img')
+
+        function TodoComponent(value, id, status) {
+            let valueholder = document.createElement("h6");
+            let componentContainer = document.createElement("div");
+            let childcontainer = document.createElement("div");
+            let deleteBtn = document.createElement("span");
+            let completeBtn = document.createElement("span");
+
+
+            componentContainer.setAttribute("id", `item-${id}`)
+            childcontainer.setAttribute("class", "action-con")
+
+            deleteBtn.setAttribute("class", "material-symbols-outlined");
+            deleteBtn.innerText = "delete";
+            deleteBtn.style.cursor = "pointer";
+            deleteBtn.setAttribute("title", "Delete Task")
+
+
+            completeBtn.setAttribute("class", "material-symbols-outlined");
+            completeBtn.innerText = "task_alt";
+            completeBtn.style.cursor = "pointer";
+            completeBtn.setAttribute("title", "Complete")
+
+            deleteBtn.addEventListener("click", () => {
+                $.ajax({
+                    url: "http://localhost:8000/todoapi/todo/item/" + id + "/",
+                    type: "DELETE",
+                    success: (res) => {
+                        if (res === "delete") {
+                            $('div').remove(`#item-${id}`)
+                            const body = document.querySelector(".data-view").children.length;
+                            console.log(body)
+                            if (body === 0) {
+                                img.show()
+                            }
+                        }
+                    },
+                    error: (err) => {
+                        console.log(err)
+                    }
+                })
+            })
+
+            completeBtn.addEventListener("click", () => {
+                $.ajax({
+                    url: "http://localhost:8000/todoapi/todo/item/" + id + "/",
+                    type: "PATCH",
+                    success: (res) => {
+                        if (res === "complete") {
+                            valueholder.style.textDecoration = "line-through"
+                            componentContainer.setAttribute("class", "alert alert-dark item-con");
+                        }
+                    },
+                    error: (err) => {
+                        console.log(err)
+                    }
+                })
+            })
+
+
+            childcontainer.append(completeBtn);
+            childcontainer.append(deleteBtn);
+
+
+            valueholder.innerText = value;
+            if (!status) {
+                valueholder.style.textDecoration = "none"
+                componentContainer.setAttribute("class", "alert alert-primary item-con");
+            } else {
+                valueholder.style.textDecoration = "line-through"
+                componentContainer.setAttribute("class", "alert alert-dark item-con");
+            }
+            componentContainer.appendChild(valueholder);
+            componentContainer.appendChild(childcontainer)
+            $(".data-view").append(componentContainer);
+        }
+
+        $().ready(() => {
+            let MainStore = null
+            $.ajax({
+                url: "http://localhost:8000/todoapi/gettodo/",
+                success: (data) => {
+                    if (data.tododata.length > 0) {
+                        MainStore = data;
+                        console.log(data)
+                        for (const todovalue of data.tododata) {
+                            TodoComponent(todovalue.todovalue, todovalue.id, todovalue.todostatus)
+                        }
+                        img.hide()
+
+                    } else {
+                        img.show()
+                    }
+
+
+                },
+                error: (err) => {
+                    console.log(err)
+                }
+            })
+
+
+            $("#add-task").click(() => {
+                let value = $(".value-input").val();
+                $(".value-input").val("");
+                $.post({
+                    url: "http://localhost:8000/todoapi/inserttodo/",
+                    data: { "value": value },
+                    success: (data) => {
+                        img.hide()
+                        const backenddata = data.tododata
+                        TodoComponent(backenddata.todovalue, backenddata.id, backenddata.todostatus)
+
+                    },
+                    error: (err) => {
+                        console.log(err)
+                    }, dataType: "json"
+                })
+            })
+
+
+        })
+    </script>
+</body>
+
+</html>
